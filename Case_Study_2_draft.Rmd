@@ -26,20 +26,79 @@ favMovies <- arrange(mlData, desc(rating))
 ```  
 
 - How many movies have an average rating over 4.5 among men? How about women?
+
+```{r, echo=T, eval=F}
+# r code that plots all unqiue titles where rating >4.5 and gender = M, by count of votes
+```
+
+```{r, echo=T, eval=F}
+# r code that plots all unqiue titles where rating >4.5 and gender = F, by count of votes
+```
+
 - How many movies have an median rating over 4.5 among men over age 30? How about women over age 30?
+
+```{r, echo=T, eval=F}
+# r code that plots all unqiue titles where median rating >4.5 and gender = M, and age greater than or equal to 30 by count of votes
+```
+
+```{r, echo=T, eval=F}
+# r code that plots all unqiue titles where median rating >4.5 and gender = F, and age greater than or equal to 30 by count of votes
+```
+
 - What are the ten most popular movies?
     + Choose what you consider to be a reasonable defintion of "popular".
+
+```{r, echo=T, eval=F}
+# r code that plots top 10 unqiue titles with most number of 5 star votes 
+```
     + Be perpared to defend this choice.
+
+# defend this choice by reasoning that 'popular' might best be interpreted through democratically through volume, expressed by number of unique votes. More votes = more popular 
+
 - Make some conjectures about how easy various groups are to please? Support your answers with data!
     + For example, one might conjecture that people between the ages of 1 and 10 are the easiest to please since they are all young children.    This conjecture may or may not be true, but how would you support or disprove either conclusion with with data?
+
+```{r, echo=T, eval=F}
+# r code that plots demographics with highest incidence of 5 starts by gender 
+```
+
+```{r, echo=T, eval=F}
+# r code that plots demographics with highest incidence of 5 starts by age 
+```
+
+```{r, echo=T, eval=F}
+# r code that plots demographics with highest incidence of 5 starts by profession 
+```
+
+```{r, echo=T, eval=F}
+# r code that plots demographics with highest incidence of 5 starts by genre 
+```
+
     + Be sure to come up with your own conjectures and support them with data!
+
+# gender, age, profession and genre rating comparisions
 
 ## Problem 2: Expand our investigation to histograms
 **An obvious issue with any inferences drawn from Problem 1 is that we did not consider how many times a movie was rated.**
 
 - Plot a histogram of the ratings of all movies.
+
+```{r, echo=T, eval=F}
+# r code that plots histogram of all movies by rating 
+```
+
 - Plot a histogram of the number of ratings each movie recieved.
+
+```{r, echo=T, eval=F}
+# r code that plots histogram of number of ratings each movie recieved. 
+```
+
 - Plot a histogram of the average rating for each movie.
+
+```{r, echo=T, eval=F}
+# r code that plots histogram of the average rating for each movie.
+```
+
 - Plot a histogram of the average rating for movies which are rated more than 100 times.
     + What do you observe about the tails of the histogram where you use all the movies versus the one where you only use movies rated more than 100 times?
     + Which highly rated movies would you trust are actually good? Those rated more than 100 times or those rated less than 100 times?
@@ -80,4 +139,5 @@ All set!
 2. R Code with RMarkdown, compile it to PDF
 
 How to submit:
+
 - Submit PDF file on Course Webpage on Canvas only. Do not email it to me.
