@@ -1,0 +1,28 @@
+install.packages("ggplot2")
+install.packages("readr")
+install.packages("dplyr")
+library(ggplot2)
+library(readr)
+library(dplyr)
+movielens = 'https://raw.githubusercontent.com/dnchari/DS501_MovieLens/master/Results/unifiedMLDataMulti.csv'
+mlData = read.csv(movielens)
+head(mlData)
+
+#hisogram of all movies >4.5
+DataMF <- mlData [mlData$rating > 4.5, ]
+ggplot(data = DataMF) +
+  aes (x = user_id) + 
+  geom_histogram(bins = 30)
+
+#histogram of all movies men rate 4.5+
+DataM <- mlData [mlData$gender == 'M',]
+Mfavs <- DataM [DataM$rating > 4.5, ]
+ggplot(data = Mfavs, aes(x = user_id))  +
+  geom_histogram(bins = 30)
+
+#histogram of all movies women rate 4.5+
+DataF <-  mlData [mlData$gender == 'F',]
+Ffavs <- DataF [DataF$rating > 4.5, ]
+ggplot(data = Ffavs, aes(x = user_id))  +
+  geom_histogram(bins = 30)
+
