@@ -1,0 +1,14 @@
+install.packages("ggplot2")
+install.packages("readr")
+install.packages("dplyr")
+library(ggplot2)
+library(readr)
+library(dplyr)
+movielens = 'https://raw.githubusercontent.com/dnchari/DS501_MovieLens/master/Results/unifiedMLDataMulti.csv'
+mlData = read.csv(movielens)
+head(mlData)
+
+DataM <- mlData [mlData$gender == 'M',]
+Mfavs <- DataM [DataM$rating > 4.5, ]
+ggplot(data = Mfavs, aes(x = rating))  +
+  geom_histogram()
