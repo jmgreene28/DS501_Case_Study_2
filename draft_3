@@ -1,0 +1,41 @@
+install.packages("readr")
+install.packages("dplyr")
+install.packages("ggplot2")
+install.packages("purrr")
+install.packages("magrittr")
+install.packages("stringr")
+install.packages("tidyverse")
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(magrittr)
+library(stringr)
+library(tidyverse)
+movielens = 'https://raw.githubusercontent.com/dnchari/DS501_MovieLens/master/Results/unifiedMLDataMulti.csv'
+mlData = read.csv(movielens)
+view(mlData)
+
+
+# How many movies have an average rating over 4.5 overall?
+
+favMovies <- mlData %>% filter(rating>4.5)
+view(favMovies)
+
+cat(n_distinct(favMovies$movie_title), "Number of Movies\n",
+    n_distinct(favMovies$user_id), "Number of Users\n")
+
+favMovies %>%
+  group_by(movie_title) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
+
+favMovies %>%
+  group_by(movie_title) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
+
+ggplot(
+  data = favMovies,
+  mapping = aes(x = rating)
+) + 
+  geom_bar()
