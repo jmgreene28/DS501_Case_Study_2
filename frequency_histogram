@@ -1,0 +1,24 @@
+install.packages("readr")
+install.packages("dplyr")
+install.packages("ggplot2")
+install.packages("purrr")
+install.packages("magrittr")
+install.packages("stringr")
+install.packages("tidyverse")
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(magrittr)
+library(stringr)
+library(tidyverse)
+movielens = 'https://raw.githubusercontent.com/dnchari/DS501_MovieLens/master/Results/unifiedMLDataMulti.csv'
+mlData = read.csv(movielens)
+view(mlData)
+
+ggplot(mlData,
+       aes(x = rating)) + 
+  geom_histogram(binwidth = .5, fill = "skyblue", color = "black") +
+  labs(title = "Dist. of Movie Rating", 
+       x = "Rating",
+      y = "Frequency") +
+  theme_dark()
