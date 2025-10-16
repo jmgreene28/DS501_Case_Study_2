@@ -1,0 +1,202 @@
+---
+title: "Case Study 2 - Analyzing data from MovieLens"
+author: "James Greene"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+## Introduction
+
+In this case study we will look at the movies data set from MovieLens. 
+Specifically, we will be examining user's ratings for movie titles, as well as demographic data such as age, gender and occupations of those users. 
+In this report, we will analyze this MovieLens dataset to gain insights into the relationships between user's demographics and their cinematic rankings. 
+
+## Problem 1: Importing the MovieLens data set and merging it into a single data frame
+https://raw.githubusercontent.com/dnchari/DS501_MovieLens/master/Results/unifiedMLDataMulti.csv
+```{r, echo=F, eval=T}
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(magrittr)
+library(stringr)
+library(tidyverse)
+movielens = 'https://raw.githubusercontent.com/dnchari/DS501_MovieLens/master/Results/unifiedMLDataMulti.csv'
+mlData = read.csv(movielens)
+```
+
+**Report some basic details of the data you collected. For example:**
+
+First, let's take a look at the overall data, the total number of movies in our dataset, and how many users are ranking these films
+
+```{r, echo=F, eval=T}
+knitr::kable(
+cat(n_distinct(mlData$movie_title), "Total Movies\n",
+    n_distinct(mlData$user_id), "Total Users\n"))
+```
+
+
+- How many movies have an average rating over 4.5 overall?
+
+```{r echo=F, eval=T}
+#fav movies overall
+favMovies <- mlData %>% filter(rating>4.5)
+
+#table of movies with most 4 or 5 rating votes
+knitr::kable(head(favMovies %>%
+                    group_by(movie_title) %>%
+                    summarise(count=n()) %>%
+                    arrange(desc(count))))
+head(10)
+```
+
+##another attempt at highest rated movies, mean rating score
+```r{ echo=F, eval=T}
+averageRating <- mlData %>%
+  group_by(movie_title) %>%
+  summarise(avg_rating = mean(rating, na.rm = TRUE)) %>%
+  arrange(desc(avg_rating))
+
+knitr::kable(head(averageRating)) %>% head(10)
+```
+
+##mean rating score again, but min threshold of votes
+```r{echo=F, eval=T}
+min_ratings <- 25
+filteredavgRating <-  mlData %>%
+  group_by(movie_title) %>%
+  summarise(
+    avg_rating = mean(rating, na.rm = TRUE),
+    rating_count = n()
+  ) %>%
+  filter(rating_count >= min_ratings) %>%
+  arrange(desc(avg_rating))
+
+knitr::kable(head(filteredavgRating)) %>% head(10)
+``
+
+- How many movies have an average rating over 4.5 among men? How about women?
+
+```{r echo=F, eval=T}
+##demograpic favorites
+favMens <- favMovies %>% filter(gender == "M")
+favWomens <- favMovies %>% filter(gender == "F")
+over30men <- favMens %>% filter(age>30)
+over30women <- favWomens %>% filter(age>30)
+under20men <- favMens %>% filter(age<20)
+under20women <-  favWomens %>% filter(age<20)
+```
+
+```{r echo=T, eval=T, }
+#table of movies Men rated 4 or 5 stars
+knitr::kable(head(favMens %>%
+                    group_by(movie_title) %>%
+                    summarise(count=n()) %>%
+                    arrange(desc(count))))
+head(10)
+
+#table of movies Women rated 4 or 5 stars
+knitr::kable(head(favWomens %>%
+                    group_by(movie_title) %>%
+                    summarise(count=n()) %>%
+                    arrange(desc(count))))
+head(10)
+
+#men over 30
+knitr::kable(head(over30men %>%
+                    group_by(movie_title) %>%
+                    summarise(count=n()) %>%
+                    arrange(desc(count))))
+head(10)
+
+#women over 30
+knitr::kable(head(over30women %>%
+                    group_by(movie_title) %>%
+                    summarise(count=n()) %>%
+                    arrange(desc(count))))
+head(10)
+
+#under 20 men
+knitr::kable(head(under20men %>%
+                    group_by(movie_title) %>%
+                    summarise(count=n()) %>%
+                    arrange(desc(count))))
+head(10)
+
+#under 20 women
+knitr::kable(head(under20women %>%
+                    group_by(movie_title) %>%
+                    summarise(count=n()) %>%
+                    arrange(desc(count))))
+head(10)
+
+```
+
+- How many movies have an median rating over 4.5 among men over age 30? How about women over age 30?
+- What are the ten most popular movies?
+    + Choose what you consider to be a reasonable defintion of "popular".
+    + Be perpared to defend this choice.
+- Make some conjectures about how easy various groups are to please? Support your answers with data!
+    + For example, one might conjecture that people between the ages of 1 and 10 are the easiest to please since they are all young children.    This conjecture may or may not be true, but how would you support or disprove either conclusion with with data?
+    + Be sure to come up with your own conjectures and support them with data!
+
+## Problem 2: Expand our investigation to histograms
+**An obvious issue with any inferences drawn from Problem 1 is that we did not consider how many times a movie was rated.**
+
+##histogram of # of reviews per movie
+```{r}
+mlData %>% group_by(movie_title) %>%
+  summarise(n=n()) %>%
+  ggplot(aes(n)) +
+  geom_histogram(fill="#69b3a2", color="#e9ecef", alpha=0.9) +
+  scale_x_log10() + 
+  ggtitle("Distribution of Movies", 
+          subtitle = "The distribution is not symmetrical") +
+  xlab("Number of Ratings") +
+  ylab("Number of Movies") 
+```
+
+- Plot a histogram of the ratings of all movies.
+- Plot a histogram of the number of ratings each movie recieved.
+- Plot a histogram of the average rating for each movie.
+- Plot a histogram of the average rating for movies which are rated more than 100 times.
+    + What do you observe about the tails of the histogram where you use all the movies versus the one where you only use movies rated more than 100 times?
+    + Which highly rated movies would you trust are actually good? Those rated more than 100 times or those rated less than 100 times?
+- Make some conjectures about the distribution of ratings? Support your answers with data!
+    + For example, what age range do you think has more extreme ratings? Do you think children are more or less likely to rate a movie 1 or 5?
+    + Be sure to come up with your own conjectures and support them with data!
+
+## Problem 3: Correlation: Men versus women
+**Let us look more closely at the relationship between the pieces of data we have.**
+
+
+- Make a scatter plot of men versus women and their mean rating for every movie.
+- Make a scatter plot of men versus women and their mean rating for movies rated more than 200 times.
+- Compute the correlation coefficent between the ratings of men and women.
+    + What do you observe?
+    + Are the ratings similiar or not? Support your answer with data!
+- Conjecture under what circumstances the rating given by one gender can be used to predict the rating given by the other gender.
+    + For example, are men and women more similar when they are younger or older?
+    + Be sure to come up with your own conjectures and support them with data!
+
+## Problem 4: Open Ended Question: Business Intelligence
+- Do any of your conjectures in Problems 1, 2, and 3 provide insights that a movie company might be interested in?
+- Propose a business question that you think this data can answer.
+- Suppose you are a Data Sciencetist at a movie company. Convince your boss that your conjecture is correct!
+
+## Done
+All set!
+
+**What do you need to submit?**
+
+1. Report: please prepare a report based on what you found in the data.
+
+- What data you collected?
+- Why this topic is interesting or important to you? (Motivations)
+- How did you analyze the data?
+- What did you find in the data? (please include figures or tables in the report)
+
+2. R Code with RMarkdown, compile it to PDF
+
+How to submit:
+- Submit PDF file on Course Webpage on Canvas only. Do not email it to me.
