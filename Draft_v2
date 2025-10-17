@@ -1,0 +1,133 @@
+---
+title: "Case Study 2"
+author: "James Greene"
+date: "2025-10-16"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+This case study will examine movie ratings from Moive Lens views. The data set we will examine the demographics of the reviewers, the genres of the movie titles reviewed, and look for relationships in the data. 
+
+```{r packages}
+#install packages
+packages <- c('tidyverse',
+              'ggplot2',
+              'stringr',
+              'dplyr',
+              'magrittr',
+              'ggthemes')
+install.packages(packages)
+```
+
+```{r libraries}
+library(tidyverse)
+library(ggplot2)
+library(stringr)
+library(dplyr)
+library(magrittr)
+library(ggthemes)
+```
+
+```{r load data}
+movielens = 'https://raw.githubusercontent.com/dnchari/DS501_MovieLens/master/Results/unifiedMLDataMulti.csv'
+mlData = read.csv(movielens)
+```
+
+First, we'll take a quick look at the overall rating distribution, with a simple histogram plotting the overall count of the frequency of each score.   
+
+```{r overall rating distribution plot}
+#plot distribution of ratings
+ggplot(mlData,
+       aes(x = rating)) + 
+  geom_histogram(binwidth = .5, fill = "skyblue", color = "black") +
+  labs(title = "Dist. of Movie Rating", 
+       x = "Rating",
+      y = "Frequency") +
+  theme_dark()
+```
+Here we can see overall, the Movie Lens reviewers have a mild preference for ratings movies a 4 out of 5, but we can't make any specific conjectures, due to the mildly normal distrubtion of the rating counts. 
+
+We can make some initial comparisons by looking at the overall rating distributions between men and women, and overall rating distribution by occupation and age.
+
+```{r facet wrap gender and occupation}
+ggplot(mlData,
+       aes(x = rating)) + 
+  geom_histogram(binwidth = .5, fill = "skyblue", color = "black") +
+  labs(title = "Dist. of Movie Rating by Gender", 
+       x = "Rating",
+      y = "Frequency") +
+    facet_wrap(~gender)
+  theme_dark()
+
+ggplot(mlData,
+       aes(x = rating)) + 
+  geom_histogram(binwidth = .5, fill = "skyblue", color = "black") +
+  labs(title = "Dist. of Movie Rating by Occupation", 
+       x = "Rating",
+      y = "Frequency") +
+    facet_wrap(~occupation)
+  theme_dark()
+```  
+
+Based on these simple visualizations on review frequency, we can make some initial assumptions that our movie ratings will skew towards the preferences of male students. 
+
+##Problem 1: Analysis of the Movie Lens data set
+
+Our first step in our analysis of the Movie Lens data is identifying popularity based on user ratings. This can be done in a handful of ways. 
+
+First, we can simply calculate movies based on their average rating. On this basis, we can make a simple list of total movies with an average rating of 4.5 or higher. 
+
+
+```{r favorites}
+#calculating raw average rating
+averageRating <- mlData %>%
+  group_by(movie_title) %>%
+  summarise(avg_rating = mean(rating, na.rm = TRUE)) %>%
+  arrange(desc(avg_rating))
+
+avg_ratingDF <- averageRating %>% filter(avg_rating>=4.50)
+
+knitr::kable(avg_ratingDF)
+```
+
+This approach is a little limited because the averages in general are easily skewed at small quantities. To help manage this risk, we can filter for films with a threshold of at least 25 reviews. 
+
+```{r}
+#fitered average rating to min number of reviews
+
+min_ratings <- 25
+filteredavgRating <-  mlData %>%
+  group_by(movie_title) %>%
+  summarise(
+    avg_rating = mean(rating, na.rm = TRUE),
+    rating_count = n()
+  ) %>%
+  filter(rating_count >= min_ratings) %>%
+  arrange(desc(avg_rating))
+```
+
+```{r tables of favorites}
+knitr::kable(head(filteredavgRating)) %>% head(10)
+```
+
+## Problem 2: Expand our investigation to histogram
+
+```{r histograms}
+#histogram of avg_rating distribution
+ggplot(averageRating) + 
+  geom_histogram(aes(x = avg_rating))
+
+#histogram of filtered_rating distribution
+ggplot(filteredavgRating) + 
+  geom_histogram(aes(x = avg_rating))
+
+```
+
+## Problem 3: Correlation: Men versus women
+
+## Problem 4: Open Ended Question: Business Intelligence 
