@@ -1,0 +1,523 @@
+---
+title: "Case Study 2"
+author: "James Greene"
+date: "2025-10-16"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+```
+
+## Introduction
+
+This case study will examine movie ratings from MovieLens users. The data set we will examine the demographics of the reviewers, the genres of the movie titles reviewed, and look for relationships in the data to determine what makes a movie popular. 
+
+```{r package-install, include=FALSE}
+#install packages
+options(repos = c(CRAN = "https://cran.rstudio.com"))
+packages <- c('tidyverse',
+              'ggplot2',
+              'stringr',
+              'dplyr',
+              'magrittr',
+              'ggthemes')
+install.packages(packages)
+```
+
+```{r libraries, include=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(stringr)
+library(dplyr)
+library(magrittr)
+library(ggthemes)
+```
+
+```{r prepare dataframes, message=FALSE, warning=FALSE}
+movielens = 'https://raw.githubusercontent.com/dnchari/DS501_MovieLens/master/Results/unifiedMLDataMulti.csv'
+mlData = read.csv(movielens)
+MensDF <- mlData %>% filter(gender == "M")
+WomensDF <- mlData %>% filter(gender == "F")
+```
+
+First, we'll take a quick look at the overall rating distribution, with a simple histogram plotting the overall count of the frequency of each score. This histogram will readers an overall distribution of the Movie Lens userbase. 
+
+```{r overall rating distribution plot, message = FALSE, warning = FALSE, results='hide'}
+#plot distribution of ratings
+ggplot(mlData,
+       aes(x = rating)) + 
+  geom_histogram(binwidth = .5, fill = "skyblue", color = "black") +
+  labs(title = "Dist. of Movie Rating", 
+       x = "Rating",
+      y = "Frequency") +
+  theme_clean()
+```
+Here we can see overall, the Movie Lens reviewers have a mild preference for ratings movies a 4 out of 5, but we can't make any specific conjectures. This is due to the mildly normal distribution of the rating counts.
+
+To get more actionable information, we can make some initial comparisons by looking at the overall rating distributions between men and women, and overall rating distribution by occupation and age.
+
+```{r facet wrap gender and occupation, message = FALSE, warning = FALSE, results='hide'}
+ggplot(mlData,
+       aes(x = rating)) + 
+  geom_histogram(binwidth = .5, fill = "skyblue", color = "black") +
+  labs(title = "Dist. of Movie Rating by Gender", 
+       x = "Rating",
+      y = "Frequency") +
+    facet_wrap(~gender)
+  theme_clean()
+
+ggplot(mlData,
+       aes(x = rating)) + 
+  geom_histogram(binwidth = .5, fill = "skyblue", color = "black") +
+  labs(title = "Dist. of Movie Rating by Occupation", 
+       x = "Rating",
+      y = "Frequency") +
+    facet_wrap(~occupation)
+  theme_clean()
+```  
+
+Based on these simple visualizations on review frequency, we can make some initial assumptions that our movie ratings will skew towards the preferences of male students, but beyond that we do not know very much about what movies are popular, and why. 
+
+# Problem 1: Analysis of the Movie Lens data set
+
+Our first step in our analysis of the Movie Lens data is identifying popularity based on user ratings. This can be done in a handful of ways. 
+
+First, we can simply calculate movies based on their average rating. On this basis, we can make a simple list of total movies with an average rating of 4.5 or higher. On this list we can identify 15 titles.   
+
+
+```{r favorites}
+#calculating raw average rating
+averageRating <- mlData %>%
+  group_by(movie_title) %>%
+  summarise(avg_rating = mean(rating, na.rm = TRUE)) %>%
+  arrange(desc(avg_rating))
+
+avg_ratingDF <- averageRating %>% filter(avg_rating>=4.50)
+
+knitr::kable(avg_ratingDF, caption = 'Movies with a 4.5+ average rating')
+```
+
+One of the first questions we have with this list of movies with an average rating of 4.5 or higher, is how many votes went into the average calculation. Averages can be a little limited because the computation of an average score can be very noisy at low numbers of observations. To help manage this risk, we can filter for films with a threshold of at least 50 reviews. 
+
+```{r filtered avg_rating, include=FALSE}
+#fitered average rating to min number of reviews
+
+min_ratings <- 50
+filteredavgRating <- mlData %>%
+  group_by(movie_title) %>%
+  summarise(
+    avg_rating = mean(rating, na.rm = TRUE),
+    rating_count = n(),
+    .groups = "drop"  # optional: drops grouping after summarise
+  ) %>%
+  filter(rating_count >= min_ratings) %>%
+  arrange(desc(avg_rating))
+```
+
+```{r tables of avg favorites}
+top10avg <- head(filteredavgRating, 10)
+knitr::kable(top10avg, caption = "Top 10 Movies by Average Rating, min 50 votes")
+```
+
+We can also examine the median review score, to see if that changes our list of most popular movies at all. Based on median score, we have an alternative list of top 10 'favorite' films. 
+
+```{r median calcuations}
+#median 
+medianRating <- mlData %>%
+  group_by(movie_title) %>%
+  summarise(median_rating = median(rating, na.rm = TRUE)) %>%
+  arrange(desc(median_rating))
+
+
+med_ratingDF <- medianRating %>% filter(median_rating>=4.50)
+
+top_10_median <- head(med_ratingDF, 10)
+
+knitr::kable(top_10_median, caption = "Top 10 movies by Median rating")
+```
+
+In this calculation, we see Taiwanese new wave title 'Aiqing wansui (1994)' take the top spot. Examining the distribution of the votes for this movie, we see only 1 observation, of 1 reviewer, who rated it 5 stars. If only 1 person has reviewed a movie, it's hard for us to conclude it's very popular, since more popular movies will have a larger audience. To adjust for this, let's look at this same median calculations, this time passed through a filtering of a minimum of 50 votes.
+
+```{r plot dist for single title}
+aiqingWansui <- mlData %>% filter(movie_title =='Aiqing wansui (1994)')
+```
+
+```{r filtered median ratings}
+filteredmedianRating <- mlData %>%
+  group_by(movie_title) %>%
+  summarise(
+    medianRating = mean(rating, na.rm = TRUE),
+    rating_count = n(),
+    .groups = "drop"  # optional: drops grouping after summarise
+  ) %>%
+  filter(rating_count >= min_ratings) %>%
+  arrange(desc(medianRating))
+```
+
+```{r top 10 median ratings}
+top_10_median <- head(filteredmedianRating, 10)
+knitr::kable(top_10_median, caption = "Top 10 Movies by Median Rating, min 50 votes")
+```
+
+We can drill down a little deeper in see if there's an age dynamic along with gender, in terms of movie preferences. For the next phase of our investigation, we'll compare lists of top 10 movies between men and women over 30, versus men and women under 20. 
+
+```{r prepare dataframes 2}
+over30men <- MensDF %>% filter(age>30)
+over30women <- WomensDF %>% filter(age>30)
+under20men <- MensDF %>% filter(age<20)
+under20women <-  WomensDF %>% filter(age<20)
+```
+
+After creating a dataframe for each demographic set, we will pass each data set through this case study's standard rating filtering and create a series of Top 10 Titles lists, displaying the average rating, and the total of votes received. For the final demographic (under 20 women), we have only 6 titles due to the minimum vote constraint.
+
+```{r create tables of 10 ten average scores}
+#over30 men
+over30MenDF <- over30men%>%
+ group_by(movie_title) %>%
+  summarise(
+    avg_rating = mean(rating, na.rm = TRUE),
+    rating_count = n(),
+    .groups = "drop"  # optional: drops grouping after summarise
+  ) %>%
+  filter(rating_count >= min_ratings) %>%
+  arrange(desc(avg_rating))
+
+over30Mentop10 <- head(over30MenDF, 10)
+
+knitr::kable(over30Mentop10, caption = "Top 10 Movies amoung Men over 30")
+
+#over30women
+over30womenDF <- over30women%>%
+ group_by(movie_title) %>%
+  summarise(
+    avg_rating = mean(rating, na.rm = TRUE),
+    rating_count = n(),
+    .groups = "drop"  # optional: drops grouping after summarise
+  ) %>%
+  filter(rating_count >= min_ratings) %>%
+  arrange(desc(avg_rating))
+
+over30Womentop10 <- head(over30womenDF, 10)
+
+knitr::kable(over30Womentop10, caption = "Top 10 Movies amoung Women over 30")
+
+#under20men
+under20MenDF <- under20men%>%
+ group_by(movie_title) %>%
+  summarise(
+    avg_rating = mean(rating, na.rm = TRUE),
+    rating_count = n(),
+    .groups = "drop"  # optional: drops grouping after summarise
+  ) %>%
+  filter(rating_count >= min_ratings) %>%
+  arrange(desc(avg_rating))
+
+under20Mentop10 <- head(under20MenDF, 10)
+
+knitr::kable(under20Mentop10, caption = "Top 10 Movies amoung Men under 20")
+
+#under20women
+under20womenDF <- under20women%>%
+ group_by(movie_title) %>%
+  summarise(
+    avg_rating = mean(rating, na.rm = TRUE),
+    rating_count = n(),
+    .groups = "drop"  # optional: drops grouping after summarise
+  ) %>%
+  filter(rating_count >= min_ratings) %>%
+  arrange(desc(avg_rating))
+
+under20Womentop10 <- head(under20womenDF, 10)
+
+knitr::kable(under20Womentop10, caption = "Top 6 Movies amoung Women under 20")
+
+```
+
+# Problem 2: Expand our investigation to histogram
+
+Along with tables of list titles, lets expand our investigation further to ratings distributions. With this analysis, we'll be using histograms to plot the frequency of each vote, based on different audience criteria. 
+
+```{r histograms, message = FALSE, warning = FALSE}
+#histogram of avg_rating distribution
+ggplot(averageRating) + 
+  geom_histogram(aes(x = avg_rating, binwidth = .5)) +
+  labs(title = "Average Ratings of all Movies",
+       x = "Average Rating",
+       y = "Frequency") + 
+  theme_clean()
+
+#histogram of filtered_rating distribution
+ggplot(filteredavgRating) + 
+  geom_histogram(aes(x = avg_rating, binwidth = .5)) +
+  labs(title = "Average Ratings",
+       subtitle = "min. 50 votes",
+       x = "Average Rating",
+       y = "Frequency") +
+  theme_clean()
+```
+
+```{r median rating, message = FALSE, warning = FALSE}
+ggplot(filteredmedianRating) +
+  geom_histogram(aes(x=medianRating, binwidth = .5)) +
+  labs(title = "Median Rating",
+       subtitle = "min. 50 votes",
+       x = "Median Rating",
+       y= "Frequency") +
+  theme_clean()
+```
+
+# Problem 3: Correlation: Men versus women
+
+Now lets dig into these ratings a bit further, breaking down by gender and age. First, lets look at the highest average movies rated by men. We've noticed that none of the average ratings in the Mens favorite movie list attains an average greater than 4.5 rating, so we'll just look at the top 10 over all, their average rating, and the number of votes the title has in the data. 
+
+```{r filtered mens top 10, include=FALSE}
+MensDF <- mlData %>% filter(gender == "M")
+favMensDF <- MensDF%>%
+ group_by(movie_title) %>%
+  summarise(
+    avg_rating = mean(rating, na.rm = TRUE),
+    rating_count = n(),
+    .groups = "drop"  # optional: drops grouping after summarise
+  ) %>%
+  filter(rating_count >= min_ratings) %>%
+  arrange(desc(avg_rating))
+
+top_10Mens <- head(favMensDF, 10)
+```
+```{r top 10 Men, min 50, echo=FALSE}
+knitr::kable(top_10Mens, caption = "Top 10 Movies amoung Men, min 50 votes")
+```
+
+Next, we'll repeat the same analysis for the women ratings. 
+
+```{r womens top 10, include=FALSE}
+WomensDF <- mlData %>% filter(gender == "F")
+favWomensDF <- WomensDF%>%
+ group_by(movie_title) %>%
+  summarise(
+    avg_rating = mean(rating, na.rm = TRUE),
+    rating_count = n(),
+    .groups = "drop"  # optional: drops grouping after summarise
+  ) %>%
+  filter(rating_count >= min_ratings) %>%
+  arrange(desc(avg_rating))
+
+top_10Womens <- head(favWomensDF, 10)
+```
+```{r top 10 Women, min 50, echo=FALSE}
+knitr::kable(top_10Womens, caption = "Top 10 Movies amoung Women, min 50 votes")
+```
+
+Continuing our investigation into ratings distributions, let's drill down further into possible gender preferences further. What does the distribution of ratings look like between demographics like gender and age? The following historgrams seek to answer exactly that question: 
+
+
+```{r men over 30 histogram, message = FALSE, warning = FALSE}
+ggplot(over30MenDF) +
+geom_histogram(aes(x=avg_rating, binwidth = .5)) +
+  labs(title = "Median Rating",
+       subtitle = "Men Over 30",
+       x = "Median Rating",
+       y = "Frequency") +
+  theme_clean()
+```
+
+```{r women over 30 histogram, message = FALSE, warning = FALSE}
+ggplot(over30womenDF) +
+geom_histogram(aes(x=avg_rating, binwidth = .5)) +
+  labs(title = "Median Rating",
+       subtitle = "Women Over 30",
+        x = "Median Rating",
+       y = "Frequency") +
+  theme_clean()
+```
+
+```{r men under 20 histogram, message = FALSE, warning = FALSE}
+ggplot(under20MenDF) +
+geom_histogram(aes(x=avg_rating, binwidth = .5)) +
+  labs(title = "Median Rating",
+       subtitle = "Men Under 20",
+        x = "Median Rating",
+       y = "Frequency") +
+  theme_clean()
+```
+
+```{r women under 20 histogram, message = FALSE, warning = FALSE}
+ggplot(over30MenDF) +
+geom_histogram(aes(x=avg_rating, binwidth = .5)) +
+  labs(title = "Median Rating",
+       subtitle = "Women under 20", 
+       x = "Median Rating",
+       y = "Frequency") +
+  theme_clean()
+```
+
+Along with the gender and age comparisons, let's take a look at the distribution of votes by title. 
+
+First, by looking at the total distribution of the ratings across all titles, we see significant clustering of voters towards a single title, which is to say only a very small number of films are receiving a high volume of votes. This tells us that very popular movies attract high numbers of voters to submit a score for that title, which is a strong indicator of popularity. We can dig into this list of popularity further by looking at the distribution of votes among the top voted titles. 
+
+```{r table of the movies by the number of ratings each movie recieved}
+ratingCounts <- mlData %>%
+  group_by(movie_title) %>%
+  summarise(ratingCount = sum(!is.na(rating)), .groups = "drop") %>%
+  arrange(desc(ratingCount))
+
+knitr::kable(head(ratingCounts, 10), caption = "Top 10 Movies by Rating Count")
+```
+
+```{r distribution of ratings for all movies, message = FALSE, warning = FALSE}
+ggplot(ratingCounts) +
+  geom_histogram(aes(x = ratingCount, binwidth = .5)) +
+  labs(title = "Rating Counts",
+       subtitle = "Distribution of votes per movie", 
+       x = "# of Ratings") +
+  theme_clean()
+```
+
+```{r more ratingCount for top 10 only, message = FALSE, warning = FALSE}
+ratingCounts10 <- (head(ratingCounts, 10))
+
+ggplot(ratingCounts10, aes(x = reorder(movie_title, ratingCount), y = ratingCount)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Top 10 Movies by Rating Count",
+    subtitle = "Distribution of votes per movie (most rated)",
+    x = "Movie Title",
+    y = "# of Ratings"
+  ) +
+  theme_clean()
+```
+
+```{r repeat rating count for movies rated more than 100 times}
+min_ratings2 <- 100
+
+filteredratingCounts <- mlData %>%
+  group_by(movie_title) %>%
+  summarise(
+    avg_rating = mean(rating, na.rm = TRUE),
+    rating_count = sum(!is.na(rating)),
+    .groups = "drop"
+  ) %>%
+  filter(rating_count >= min_ratings2) %>%
+  arrange(desc(avg_rating))
+
+knitr::kable(head(filteredratingCounts, 10), caption = "Top 10 Movies by Rating Count, min. 100 votes")
+```
+
+```{r top 25 filtered, message = FALSE, warning = FALSE}
+top25_filtered <- head(filteredratingCounts, 25)
+  
+
+ggplot(top25_filtered, aes(x = reorder(movie_title, rating_count), y = rating_count)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Filtered Movies by Rating Count",
+    subtitle = "min. 100 votes",
+    x = "Movie Title",
+    y = "# of Ratings"
+  ) +
+  theme_clean()
+```
+
+## Problem 4: Open Ended Question: Business Intelligence 
+
+Along with histograms, let's look at some correlation heatmaps of a possible relationship between movie rating and ages: 
+
+```{r fav by occupation, message = FALSE, warning = FALSE}
+FavOccupationDF <- mlData %>%
+  group_by(occupation) %>%
+  summarise(
+    avg_rating = mean(rating, na.rm = TRUE),
+    median_rating = median(rating, na.rm = TRUE),
+    rating_count = sum(!is.na(rating)),
+    .groups = "drop"
+  ) %>%
+  filter(rating_count >= min_ratings) %>%
+  arrange(desc(avg_rating))
+```
+
+```{r correlations}
+correlation_matrix <- cor(mlData[, c('age','rating')])
+
+occupationCorrelation_matrix <- cor(FavOccupationDF[, c('rating_count','avg_rating')])
+
+MensCorMatrix <- cor(MensDF[, c('age','rating')])
+
+WomensCorMatrix <- cor(WomensDF[, c('age','rating')])
+
+print(correlation_matrix)
+print(occupationCorrelation_matrix)
+print(MensCorMatrix)
+print(WomensCorMatrix)
+```
+
+```{r heatmaps}
+# Plot the heatmap
+heatmap(correlation_matrix,
+       scale = 'none',
+       symm = TRUE,
+       margins = c(10, 10),
+       main = 'Overall Correlation')
+
+# Plot the heatmap
+heatmap(occupationCorrelation_matrix,
+       scale = 'none',
+       symm = TRUE,
+       margins = c(10, 10),
+       main = 'Correlation betwen Occupation and Avg Rating')
+
+# Plot the heatmap
+heatmap(MensCorMatrix,
+       scale = 'none',
+       symm = TRUE,
+       margins = c(10, 10),
+       main = 'Correlation Matrix for Men')
+
+# Plot the heatmap
+heatmap(WomensCorMatrix,
+       scale = 'none',
+       symm = TRUE,
+       margins = c(10, 10),
+       main = 'Correlation Matrix for Women')
+```
+
+## Closing Thoughts
+
+Lastly, we'll explore some more open-ended questions with some comparisons of the top performing movies and their relative median scores. 
+
+```{r explore ratings relative to median, message = FALSE, warning = FALSE}
+top25_filteredRating <- top25_filtered %>% left_join(filteredmedianRating, by = "movie_title")
+
+ggplot(top25_filteredRating, aes(x = reorder(movie_title, medianRating), y = medianRating)) +
+  geom_col(fill = "steelblue") +
+  geom_point(aes(size = medianRating), color = "orange") +
+  coord_flip() +
+  labs(
+    title = "Filtered Movies by Rating Count",
+    subtitle = "min. 100 votes — point size = median rating",
+    x = "Movie Title",
+    y = "# of Ratings"
+  ) +
+  theme_clean()
+```
+
+```{r Rating by Occupation, echo=FALSE}
+ggplot(FavOccupationDF, aes(x = reorder(occupation, avg_rating), y = median_rating)) +
+  geom_col(fill = "steelblue") +
+  geom_point(aes(size = avg_rating), color = "orange") +
+  coord_flip() +
+  labs(
+    title = "Movie Ratings by Occupation",
+    subtitle = "min. 100 ratings — bar = median, point size = average",
+    x = "Occupation",
+    y = "Median Rating"
+  ) +
+  theme_clean()
+
+```
+
+Further business questions to investigate within the data include; further study into how genre and age interact, and what makes students either prefer movies, or prefer to review movies, relative to other occupations. 
